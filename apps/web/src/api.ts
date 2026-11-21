@@ -43,7 +43,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const serverMessage = (data as { error?: string }).error ?? null;
-    // Raw server text is kept on the error for debugging; UI should show a localized message via t().
+    // Raw server text is kept on the error for debugging only; UI shows genericError() instead.
     throw new ApiError(serverMessage ?? `Error ${res.status}`, res.status, serverMessage);
   }
   return data as T;

@@ -4,19 +4,19 @@ import { Link, useParams } from 'react-router-dom';
 import { api, type BookingDetail } from '../api';
 import { Cover, ErrorBox, Panel, Row, StatusBadge, usePersona } from '../comun';
 import { day, duration, mxn, short, usdc, when } from '../format';
-import { t } from '../i18n';
+import { genericError, t } from '../i18n';
 import { Button, Icon, Label } from '../ui';
 
-// Event labels are keyed by stable identifiers; the English text is only the default.
-const EVENT: Record<string, string> = {
-  locked: t('Paid into escrow'),
-  cancel: t('Cancelled by the guest'),
-  host_cancel: t('Cancelled by the host'),
-  release: t('Released to the host'),
-  dispute: t('Guest reported a problem'),
-  claim_damage: t('Host claimed damage'),
-  resolve: t('Arbiter split the escrow'),
-  settle_default: t('Paid out by default after the deadline'),
+// Event labels are keyed by stable identifiers and resolved at render time.
+const EVENT: Record<string, () => string> = {
+  locked: () => t('Paid into escrow'),
+  cancel: () => t('Cancelled by the guest'),
+  host_cancel: () => t('Cancelled by the host'),
+  release: () => t('Released to the host'),
+  dispute: () => t('Guest reported a problem'),
+  claim_damage: () => t('Host claimed damage'),
+  resolve: () => t('Arbiter split the escrow'),
+  settle_default: () => t('Paid out by default after the deadline'),
 };
 
 export default function BookingPage({ onChange }: { onChange: () => void }) {
@@ -29,7 +29,7 @@ export default function BookingPage({ onChange }: { onChange: () => void }) {
   const [now, setNow] = useState(Date.now() / 1000);
   const [split, setSplit] = useState<{ guest: string; host: string; platform: string } | null>(null);
 
-  const load = () => api.booking(Number(id)).then((d) => { setB(d); setSkew(d.ledgerTime - Date.now() / 1000); }).catch((e: Error) => setErr(e.message));
+  const load = () => api.booking(Number(id)).then((d) => { setB(d); setSkew(d.ledgerTime - Date.now() / 1000); }).catch(() => setErr(genericError()));
   useEffect(() => { load(); const t = setInterval(load, 10_000); return () => clearInterval(t); }, [id]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now() / 1000), 1000); return () => clearInterval(t); }, []);
 
@@ -52,8 +52,8 @@ export default function BookingPage({ onChange }: { onChange: () => void }) {
       await api.act(b!.id, action, body);
       await load();
       onChange();
-    } catch (e) {
-      setErr((e as Error).message);
+    } catch {
+      setErr(genericError());
     } finally {
       setBusy(null);
     }
@@ -111,7 +111,7 @@ export default function BookingPage({ onChange }: { onChange: () => void }) {
           <ul className="space-y-2 text-[14px]">
             {b.events.map((e) => (
               <li key={e.id} className="flex items-baseline justify-between gap-3">
-                <span><b>{EVENT[e.kind] ?? e.kind}</b> <span className="text-gris">· {when(e.created_at)}</span></span>
+                <span><b>{EVENT[e.kind]?.() ?? e.kind}</b> <span className="text-gris">· {when(e.created_at)}</span></span>
                 {e.explorer && <a className="flex min-h-12 items-center gap-1 whitespace-nowrap font-bold text-verde underline focus-visible:outline-2 focus-visible:outline-offset-2" href={e.explorer} target="_blank" rel="noreferrer">{short(e.tx_hash!, 4)} <Icon name="open_in_new" size={16} /></a>}
               </li>
             ))}

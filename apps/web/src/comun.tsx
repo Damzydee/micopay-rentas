@@ -28,14 +28,15 @@ export function Cover({ n, title, className = '' }: { n: number; title?: string;
   );
 }
 
-const STATUS: Record<Status, { label: string; tono: 'tinta' | 'naranja' | 'verde' | 'papel' | 'aviso' }> = {
-  locked: { label: t('En garantía'), tono: 'tinta' },
-  disputed: { label: t('En disputa'), tono: 'aviso' },
-  released: { label: t('Pagado'), tono: 'verde' },
-  resolved: { label: t('Resuelto'), tono: 'verde' },
-  cancelled: { label: t('Cancelado'), tono: 'papel' },
+/* Labels are resolved at render time so they follow the active language. */
+const STATUS: Record<Status, { label: () => string; tono: 'tinta' | 'naranja' | 'verde' | 'papel' | 'aviso' }> = {
+  locked: { label: () => t('En garantía'), tono: 'tinta' },
+  disputed: { label: () => t('En disputa'), tono: 'aviso' },
+  released: { label: () => t('Pagado'), tono: 'verde' },
+  resolved: { label: () => t('Resuelto'), tono: 'verde' },
+  cancelled: { label: () => t('Cancelado'), tono: 'papel' },
 };
-export const StatusBadge = ({ s }: { s: Status }) => <Badge tono={STATUS[s].tono}>{STATUS[s].label}</Badge>;
+export const StatusBadge = ({ s }: { s: Status }) => <Badge tono={STATUS[s].tono}>{STATUS[s].label()}</Badge>;
 
 export function Panel({ title, children, className = '' }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
